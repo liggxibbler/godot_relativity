@@ -1,0 +1,28 @@
+[gd_scene load_steps=5 format=3 uid="uid://db6jn55m60rc0"]
+
+[ext_resource type="Shader" path="res://Shaders/relativity.gdshader" id="1_dylw1"]
+[ext_resource type="Script" path="res://relativity.gd" id="2_su37p"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nhheq"]
+render_priority = 0
+shader = ExtResource("1_dylw1")
+shader_parameter/transformMatrix = null
+shader_parameter/fourvel = null
+shader_parameter/uposition = null
+shader_parameter/boost = null
+shader_parameter/orientation = null
+shader_parameter/iResolution = null
+shader_parameter/iMouse = null
+shader_parameter/iTimeDelta = null
+
+[sub_resource type="QuadMesh" id="QuadMesh_gofnk"]
+material = SubResource("ShaderMaterial_nhheq")
+
+[node name="Node3D" type="Node3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("QuadMesh_gofnk")
+script = ExtResource("2_su37p")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.686272)
