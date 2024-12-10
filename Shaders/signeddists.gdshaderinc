@@ -9,8 +9,8 @@ float sdBox(vec4 p , vec3 s)
 {
     float time=p.w;
     p.xyz=fract(p.xyz)-.5; //this creates the grid of reference cubes
-    p.yz*=rot(p.w*.5);
-    p.xyz= abs(p.xyz)-s;
+    p.yz *= Rotate(p.w*.5);
+    p.xyz = abs(p.xyz)-s;
     return length(max(p.xyz,0.))+ min(max(p.x,max(p.y,p.z)),0.);  
 }
 

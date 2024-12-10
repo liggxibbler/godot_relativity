@@ -2,7 +2,7 @@ extends MeshInstance3D
 
 var material
 
-var orientation = Vector3(1.0, 0.0, 0.0)
+var orientation = Vector3(0.0, 0.0, 0.0)
 var uposition = Vector4.ZERO
 var fourvel = Vector4(0,0,0,1)
 var boost = Vector4.ZERO
@@ -31,7 +31,7 @@ func _ready() -> void:
 	shader_iTimeDelta = StringName("iTimeDelta")
 	
 	#var resolution = Vector3(get_viewport().size.x, get_viewport().size.y, 1.0)
-	var resolution = Vector3(1000, 1000, 1.0)
+	var resolution = Vector3(1920, 1920, 1.0)
 	material.set_shader_parameter(shader_iResolution, resolution)
 	
 func gamma_operator(beta) -> float:
@@ -54,10 +54,9 @@ func lorentz(v : Vector4, c) -> Projection:
 func handle_physics(dt: float, input_boost : Vector4, c : float) -> void:
 	if input_boost != Vector4.ZERO:
 		input_boost = input_boost / fourvel.w
-		boost = lorentz(-boost * dt, c)
-		var new_transform_matrix = transform_matrix * boost
-		fourvel = new_transform_matrix * Vector4(0,0,0,1)		
-		transform_matrix = new_transform_matrix
+		boost = lorentz(-input_boost * dt, c)
+		transform_matrix = transform_matrix * boost
+		fourvel = transform_matrix * Vector4(0,0,0,1)
 
 	uposition += fourvel * dt
 	
@@ -70,6 +69,6 @@ func update_shader_values() -> void:
 	
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	handle_physics(delta, Vector4.ZERO, 1.0)
+	handle_physics(delta, Vector4(0, 0, 0, 1), 1.0)
 	
 	update_shader_values()

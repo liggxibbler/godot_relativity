@@ -21,11 +21,11 @@ float dfRocketBody(vec3 p)
 
     angularRepeatVec(PI*.25,p2.zy);
     float d = p2.z;
-    d = max(d, (rot(PI*-.125)*( p2.xz+vec2(-.7,0))).y);
-    d = max(d, (rot(PI*-.25*.75)*(p2.xz+vec2(-0.95,0))).y);
-    d = max(d, (rot(PI*-.125*.5)*( p2.xz+vec2(-0.4,0))).y);
-    d = max(d, (rot(PI*.125*.25)*( p2.xz+vec2(+0.2,0))).y);
-    d = max(d, (rot(PI*.125*.8)*( p2.xz+vec2(.5,0))).y);
+    d = max(d, (Rotate(PI*-.125)*( p2.xz+vec2(-.7,0))).y);
+    d = max(d, (Rotate(PI*-.25*.75)*(p2.xz+vec2(-0.95,0))).y);
+    d = max(d, (Rotate(PI*-.125*.5)*( p2.xz+vec2(-0.4,0))).y);
+    d = max(d, (Rotate(PI*.125*.25)*( p2.xz+vec2(+0.2,0))).y);
+    d = max(d, (Rotate(PI*.125*.8)*( p2.xz+vec2(.5,0))).y);
 
     d = max(d,-.8-p.x);
 
@@ -37,11 +37,11 @@ float dfRocketBody(vec3 p)
 float dfRocketFins(vec3 p, Fours fours)
 {
 
-    p.yz *= rot(fours.position.w * (1. + 10. * fours.boost.w));
+    p.yz *= Rotate(fours.position.w * (1. + 10. * fours.boost.w));
     vec3 pFins = p;
     angularRepeatVec(PI * .5, pFins.zy);
     pFins -= vec3(-1.0 + cos(p.x + .2) * .5, .0, .0);
-    pFins.xz *= rot(-PI * .25);
+    pFins.xz *= Rotate(-PI * .25);
     float scale = 1.0 - pFins.z * .6;
     float d = mBox(pFins, vec3(.17, .03, 3.0) * scale) * .5;
     return d;
@@ -62,7 +62,7 @@ Df_ret df(vec3 p, Fours fours, float halo)
 {
     if(fours.boost.xz!=vec2(0))
 	{
-        p.xz*=rot(-atan(fours.orientation.z,fours.orientation.x));
+        p.xz*=Rotate(-atan(fours.orientation.z,fours.orientation.x));
     }
 
     float proxy = mBox(p,vec3(4.5,.8,.8));
@@ -88,9 +88,15 @@ vec3 nf(vec3 p, Fours fours, float halo)
     return normalize(vec3(x,y,z));
 }
 
-float rocket (inout vec3 color, in vec3 pos, in vec3 dir, Fours fours, float halo)
+struct RocketOutput
 {
-    float dist, tdist = .0;
+	vec3 color;
+	float halo;
+};
+
+RocketOutput rocket (in vec3 pos, in vec3 dir, Fours fours, float halo)
+{
+	float dist, tdist = .0;
 
     for (int i=0; i<100; i++)
     {
@@ -113,7 +119,7 @@ float rocket (inout vec3 color, in vec3 pos, in vec3 dir, Fours fours, float hal
 
     if(fours.boost.xz!=vec2(0))
 	{
-        pos.xz*=rot(-atan(fours.orientation.z,fours.orientation.x));
+        pos.xz*=Rotate(-atan(fours.orientation.z,fours.orientation.x));
     }
 
     vec3 materialColor = vec3(0);
@@ -159,10 +165,10 @@ float rocket (inout vec3 color, in vec3 pos, in vec3 dir, Fours fours, float hal
         }
     }
 
+	vec3 color = vec3(0.0f);
     if (dist<.1)
 	{
-		color =  ao*materialColor;
+		color =  ao * materialColor;
 	}
-
-	return halo;
+	return RocketOutput(color, halo);
 }
