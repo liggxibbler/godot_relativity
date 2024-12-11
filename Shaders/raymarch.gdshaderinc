@@ -5,7 +5,7 @@
 #define DEBUG true
 
 //comment this if you do not want the delayed view.
-#define RETARD 1.
+#define RETARD 1.0
 
 #define MAX_ITER 1500
 #define MAX_DIST 70.
@@ -173,11 +173,11 @@ SceneDistances RayMarch(vec4 ro, vec4 rd, float direction)
 	return distances;
 }
 
-vec3 GetNormal(vec4 p, float d)
+vec3 GetNormal(vec4 p)
 {
 	vec2 e = vec2(0.01,0);
-	float f = GetDistance(p).marchDistance;
-	vec3 n = vec3(f) - vec3(
+	float d = GetDistance(p).marchDistance;
+	vec3 n = vec3(d) - vec3(
 		GetDistance(p- e.xyyy).marchDistance,
 		GetDistance(p- e.yxyy).marchDistance,
 		GetDistance(p- e.yyxy).marchDistance
@@ -196,29 +196,32 @@ MaterialQuery GetMaterial(vec4 p, SceneDistances distances)
 {	
 	MaterialQuery result = MaterialQuery(false, vec3(0.0f));
 	
-	float twisty_along_x = sin(atan(p.y,p.z)*10.);
-	float twisty_along_z = sin(atan(p.y,p.x)*10.);
-	mat2 rotation = Rotate(p.w);
+	mat2 rotation = Rotate(p.w * .5);
+	vec4 yz_rotated = p, xy_rotated = p;
+	yz_rotated.yz *= rotation;
+	float twisty_along_x = sin(atan(yz_rotated.y,yz_rotated.z)*10.);
+	xy_rotated.xy *= rotation;
+	float twisty_along_z = sin(atan(xy_rotated.y,xy_rotated.x)*10.);        
 	result.hasData = true;
     if(distances.cylinder1 < 5. * SURF)
     {
-        p.yz *= rotation;
+		p.yz *= rotation;
         result.color = COLOR_RED * twisty_along_x * twisty_along_x;		
     }
     else if(distances.cylinder2 < 5. * SURF)
     {
-        p.yz *= rotation;
-        result.color = COLOR_GREEN * twisty_along_x * twisty_along_x;
+		p.yz *= rotation;
+		result.color = COLOR_GREEN * twisty_along_x * twisty_along_x;
     }
-    else if(distances.cylinder3 < 5.*SURF)
+    else if(distances.cylinder3 < 5. * SURF)
     {
         p.xy *= rotation;
-        result.color = COLOR_MAGENTA*twisty_along_z*twisty_along_z;
+		result.color = COLOR_MAGENTA * twisty_along_z * twisty_along_z;
     }
-    else if (distances.cylinder4 < 5.*SURF)
+    else if (distances.cylinder4 < 5. * SURF)
     {
         p.xy *= rotation;
-        result.color = COLOR_BLUE*twisty_along_z*twisty_along_z;
+		result.color = COLOR_BLUE * twisty_along_z * twisty_along_z;
     }
 	else
 	{
@@ -306,11 +309,12 @@ vec3 fragment2(vec2 texCoords)
 			if (query.hasData)
 				albedo = query.color;
 			
-			vec3 n = GetNormal(p, distances.marchDistance);
+			vec3 n = GetNormal(p);
 
 			float costheta = dot(n, normalize(LIGHT_DIR)) * .5 + .5;
 			albedo /= length(distances.marchDistance * rd) * .2;
 			albedo *= costheta * costheta;
+			//albedo = .5 * n + .5;
 		}
 	}
 

@@ -17,6 +17,8 @@ var shader_iResolution
 var shader_iMouse
 var shader_iTimeDelta
 
+var is_slow = false
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	material = get_active_material(0)
@@ -69,6 +71,21 @@ func update_shader_values() -> void:
 	
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	handle_physics(delta, Vector4(0, 0, 0, 1), 1.0)
+	var delta_scaled = delta
+	if is_slow:
+		delta_scaled /= 10
+	handle_physics(delta_scaled, Vector4(.1, 0, 0, 1), 1)
 	
 	update_shader_values()
+
+func toggle_speed() -> void:
+	is_slow = not is_slow
+
+
+func _unhandled_input(event):
+	if event is InputEventKey:
+		if event.pressed:
+			if event.keycode == KEY_ESCAPE:
+				get_tree().quit()
+			elif event.keycode == KEY_SPACE:
+				toggle_speed()
