@@ -10,10 +10,11 @@ shader_parameter/transformMatrix = null
 shader_parameter/fourvel = null
 shader_parameter/uposition = null
 shader_parameter/boost = null
+shader_parameter/viewForward = null
+shader_parameter/viewUp = null
+shader_parameter/viewRight = null
 shader_parameter/orientation = null
 shader_parameter/iResolution = null
-shader_parameter/iMouse = null
-shader_parameter/iTimeDelta = null
 
 [sub_resource type="QuadMesh" id="QuadMesh_gofnk"]
 material = SubResource("ShaderMaterial_nhheq")
