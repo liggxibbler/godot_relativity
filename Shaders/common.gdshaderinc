@@ -18,7 +18,7 @@ float gamma(float b)
 mat4 LorentzGenerator(vec3 e)
 {
      float cc=c*c;
-        
+
      return mat4(vec4(0 ,0  , 0 , -e.x/cc),
 				vec4(0,   0,  0 ,  -e.y/cc),
 				vec4(0, 0,   0,   -e.z/cc) ,
@@ -26,7 +26,7 @@ mat4 LorentzGenerator(vec3 e)
 }
 
 mat2 Rotate(float angle)
-{ 
+{
     return mat2(
 		vec2(cos(angle), -sin(angle)),
 		vec2(sin(angle),cos(angle)));

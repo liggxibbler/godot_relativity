@@ -22,6 +22,7 @@ material = SubResource("ShaderMaterial_nhheq")
 [node name="Node3D" type="Node3D"]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+gi_mode = 0
 mesh = SubResource("QuadMesh_gofnk")
 script = ExtResource("2_su37p")
 

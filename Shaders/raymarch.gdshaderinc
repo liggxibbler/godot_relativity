@@ -11,10 +11,10 @@
 #define MAX_DIST 70.
 #define SURF .0001
 
-#define COLOR_RED vec3(1,0,0)
-#define COLOR_GREEN vec3(0,1,0)
+#define COLOR_RED vec3(2,0,.2)
+#define COLOR_GREEN vec3(.2,1,0)
 #define COLOR_MAGENTA vec3(1,0,1)
-#define COLOR_BLUE vec3(0,0,1)
+#define COLOR_BLUE vec3(0,.2,1)
 
 #define LIGHT_DIR vec3(-3,2,1)
 
@@ -306,12 +306,13 @@ vec3 fragment2(vec2 texCoords)
 			albedo=GetColor(dot(normalize(rd.xyz), fourvel.xyz));
 			MaterialQuery query = GetMaterial(p, distances);
 			if (query.hasData)
-				albedo = query.color;
+				albedo *= query.color;
 			
 			vec3 n = GetNormal(p);
 
 			float costheta = dot(n, normalize(LIGHT_DIR)) * .5 + .5;
-			albedo /= length(distances.marchDistance * rd) * .2;
+			float dist = length(distances.marchDistance * rd);
+			albedo /= pow(dist, 1.6) * .2;
 			albedo *= costheta * costheta;
 			//albedo = .5 * n + .5;
 		}

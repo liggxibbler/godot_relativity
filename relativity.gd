@@ -12,6 +12,8 @@ var viewForward = Vector3(1,0,0)
 var viewUp = Vector3(0,1,0)
 var viewRight = Vector3(0,0,1)
 
+var maxBoostSize = .5
+
 var lookSpeed = 1.0
 
 var shader_transformMatrix
@@ -105,6 +107,7 @@ func _process(delta: float) -> void:
 	var boostLeftRight = Input.get_axis("BoostLeft", "BoostRight")
 	var boostUpDown = Input.get_axis("BoostDown", "BoostUp")
 	var boostVector = boostBackForward * viewForward + boostLeftRight * viewRight +	boostUpDown * viewUp
+	boostVector *= maxBoostSize
 	
 	handle_physics(
 		delta_scaled,
@@ -114,23 +117,30 @@ func _process(delta: float) -> void:
 	
 	viewForward += delta * lookSpeed * Input.get_axis("LookLeft", "LookRight") * viewRight
 	viewForward += delta * lookSpeed * Input.get_axis("LookDown", "LookUp") * viewUp
+	
 	viewForward = viewForward.normalized()	
 	
 	viewUp = viewRight.cross(viewForward)
 	viewUp = viewUp.normalized()
 	viewRight = viewForward.cross(viewUp)
 	
+	var dutchAmount = delta * lookSpeed * Input.get_axis("DutchLeft", "DutchRight")
+	var newRight = cos(dutchAmount) * viewRight - sin(dutchAmount) * viewUp
+	var newUp = sin(dutchAmount) * viewRight + cos(dutchAmount) * viewUp
+	viewRight = newRight
+	viewUp = newUp
+	
 	update_shader_values()
 
 func slow_down(delta : float):
 	if time_scale < 10.0:
-		time_scale += delta * 5.0
+		time_scale *= (1 + delta * 5.0)
 	else:
 		time_scale = 10.0
 
 func speed_up(delta : float):
 	if (time_scale > 1.0):
-		time_scale -= delta * 5.0
+		time_scale *= (1 - delta * 5.0)
 	else:
 		time_scale = 1.0
 
