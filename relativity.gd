@@ -111,7 +111,7 @@ func _process(delta: float) -> void:
 	
 	handle_physics(
 		delta_scaled,
-		Vector4(boostVector.x, boostVector.y, boostVector.z, 1.0),
+		Vector4(boostVector.x, boostVector.y, boostVector.z, 0.0),
 		speedOfLight
 	)
 	
