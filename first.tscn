@@ -1,10 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://db6jn55m60rc0"]
+[gd_scene load_steps=4 format=3 uid="uid://db6jn55m60rc0"]
 
 [ext_resource type="Shader" path="res://Shaders/relativity.gdshader" id="1_dylw1"]
 [ext_resource type="Script" path="res://relativity.gd" id="2_su37p"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_nhheq"]
-render_priority = 0
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7y63f"]
 shader = ExtResource("1_dylw1")
 shader_parameter/transformMatrix = null
 shader_parameter/fourvel = null
@@ -16,15 +15,17 @@ shader_parameter/viewRight = null
 shader_parameter/orientation = null
 shader_parameter/iResolution = null
 
-[sub_resource type="QuadMesh" id="QuadMesh_gofnk"]
-material = SubResource("ShaderMaterial_nhheq")
-
 [node name="Node3D" type="Node3D"]
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-gi_mode = 0
-mesh = SubResource("QuadMesh_gofnk")
+[node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("2_su37p")
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.68312)
+[node name="CanvasLayer" type="CanvasLayer" parent="Camera2D"]
+
+[node name="ColorRect" type="ColorRect" parent="Camera2D/CanvasLayer"]
+material = SubResource("ShaderMaterial_7y63f")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

@@ -1,6 +1,6 @@
-extends MeshInstance3D
+extends Camera2D
 
-var material
+var surface_material
 
 var orientation = Vector3(0.0, 0.0, 0.0)
 var uposition = Vector4.ZERO
@@ -12,7 +12,7 @@ var viewForward = Vector3(1,0,0)
 var viewUp = Vector3(0,1,0)
 var viewRight = Vector3(0,0,1)
 
-var maxBoostSize = .5
+var maxBoostSize = 1.5
 
 var lookSpeed = 1.0
 
@@ -32,7 +32,7 @@ var speedOfLight = 1.0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	material = get_active_material(0)
+	surface_material = $CanvasLayer/ColorRect.get_material()
 	
 	shader_transformMatrix = StringName("transformMatrix")
 	shader_fourvel = StringName("fourvel")
@@ -45,10 +45,7 @@ func _ready() -> void:
 	shader_viewUp = StringName("viewUp")
 	shader_viewRight = StringName("viewRight")
 	
-	
-	#var resolution = Vector3(get_viewport().size.x, get_viewport().size.y, 1.0)
-	var resolution = Vector3(1920, 1920, 1.0)
-	material.set_shader_parameter(shader_iResolution, resolution)
+	update_resolution()
 	
 func gamma_operator(beta) -> float:
 		return pow(1 - beta * beta, -.5)
@@ -77,18 +74,24 @@ func handle_physics(dt: float, input_boost : Vector4, c : float) -> void:
 	uposition += fourvel * dt
 	
 func update_shader_values() -> void:
-	material.set_shader_parameter(shader_position, uposition)
-	material.set_shader_parameter(shader_fourvel, fourvel)
-	material.set_shader_parameter(shader_orientation, orientation)
-	material.set_shader_parameter(shader_boost, boost)
-	material.set_shader_parameter(shader_transformMatrix, transform_matrix)
-	material.set_shader_parameter(shader_view2d, view2d)
-	material.set_shader_parameter(shader_viewForward, viewForward)
-	material.set_shader_parameter(shader_viewUp, viewUp)
-	material.set_shader_parameter(shader_viewRight, viewRight)
+	surface_material.set_shader_parameter(shader_position, uposition)
+	surface_material.set_shader_parameter(shader_fourvel, fourvel)
+	surface_material.set_shader_parameter(shader_orientation, orientation)
+	surface_material.set_shader_parameter(shader_boost, boost)
+	surface_material.set_shader_parameter(shader_transformMatrix, transform_matrix)
+	surface_material.set_shader_parameter(shader_view2d, view2d)
+	surface_material.set_shader_parameter(shader_viewForward, viewForward)
+	surface_material.set_shader_parameter(shader_viewUp, viewUp)
+	surface_material.set_shader_parameter(shader_viewRight, viewRight)
 	
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
+	
+	update_resolution()
+	
+	if is_instant_braking:
+		instant_brake(delta)
+	
 	var c = cos(.1*delta)
 	var s = sin(.1*delta)	
 	orientation = Vector3(c*orientation.x-s*orientation.y,
@@ -108,6 +111,9 @@ func _process(delta: float) -> void:
 	var boostUpDown = Input.get_axis("BoostDown", "BoostUp")
 	var boostVector = boostBackForward * viewForward + boostLeftRight * viewRight +	boostUpDown * viewUp
 	boostVector *= maxBoostSize
+	
+	if Input.is_action_just_pressed("InstantBrake"):
+		instant_brake(delta_scaled);
 	
 	handle_physics(
 		delta_scaled,
@@ -151,3 +157,37 @@ func Rotate2D(vec : Vector2, angle : float) -> Vector2:
 		Vector2.ZERO
 	)
 	return T * vec
+
+var is_instant_braking = false
+var instant_brake_duration = 2.0
+var instant_brake_timer = -1.0
+var starting_matrix : Projection
+var starting_fourvel : Vector4
+
+func instant_brake(delta_time : float):
+	if not is_instant_braking:
+		is_instant_braking = true
+		instant_brake_timer = instant_brake_duration
+		starting_matrix = transform_matrix
+		starting_fourvel = fourvel
+	if is_instant_braking:
+		instant_brake_timer -= delta_time
+		if instant_brake_timer < 0:
+			instant_brake_timer = 0.0
+			is_instant_braking = false
+		var alpha = 1 - instant_brake_timer / instant_brake_duration
+		var x = starting_matrix.x
+		var y = starting_matrix.y
+		var z = starting_matrix.z
+		var w = starting_matrix.w
+		#print ("braking", alpha, x, y, z, w)
+		x=x.lerp(Vector4(1.0,0.0,0.0,0.0), alpha)
+		y=y.lerp(Vector4(0.0,1.0,0.0,0.0), alpha)
+		z=z.lerp(Vector4(0.0,0.0,1.0,0.0), alpha)
+		w=w.lerp(Vector4(0.0,0.0,0.0,1.0), alpha)
+		transform_matrix = Projection(x,y,z,w)
+		fourvel = starting_fourvel.lerp(Vector4(0,0,0,1), alpha)
+	
+func update_resolution():
+	var resolution = Vector3(get_viewport().size.x, get_viewport().size.y, 1.0)
+	surface_material.set_shader_parameter(shader_iResolution, resolution)

@@ -16,8 +16,6 @@
 #define COLOR_MAGENTA vec3(1,0,1)
 #define COLOR_BLUE vec3(0,.2,1)
 
-#define LIGHT_DIR vec3(-3,2,1)
-
 uniform mat4 transformMatrix;
 uniform vec4 fourvel;
 uniform vec4 uposition;
@@ -31,7 +29,9 @@ uniform vec3 orientation;
 uniform vec3 iResolution;
 //uniform vec2 view2d;
 
-const vec3 SIZE = vec3(.1); 
+//#define LIGHT_DIR viewForward;//vec3(-3,2,1)
+
+const vec3 BOX_SIZE = vec3(.05); 
 
 vec3 GetColor(float s)
 {
@@ -68,7 +68,7 @@ SceneDistances GetDistance(vec4 q)
 {
 	SceneDistances distances;
 	
-    float dist=sdBox(q, SIZE);
+    float dist=sdBox(q, BOX_SIZE);
     
     
 	//the cylinders:
@@ -228,12 +228,12 @@ MaterialQuery GetMaterial(vec4 p, SceneDistances distances)
 
 vec3 fragment2(vec2 texCoords)
 {
-	vec2 uv = (texCoords -.5*iResolution.xy)/iResolution.y;
+	vec2 uv = texCoords;//(texCoords -.5*iResolution.xy)/iResolution.xy;
 	
-	vec3 albedo = vec3(0, 0, 0);
+	vec3 albedo = vec3(texCoords, 0);
 	//return albedo;
 	
-    vec4 position = updatePos(vec2(0.0));
+    vec4 position = uposition;//updatePos(vec2(0.0));
     
     //ray's spacetime origin represented in "stationary coordinates":
     vec4 RO = position;
@@ -310,9 +310,10 @@ vec3 fragment2(vec2 texCoords)
 			
 			vec3 n = GetNormal(p);
 
-			float costheta = dot(n, normalize(LIGHT_DIR)) * .5 + .5;
+			float costheta = dot(n, normalize(-viewForward)) * .5 + .5;
 			float dist = length(distances.marchDistance * rd);
-			albedo /= pow(dist, 1.6) * .2;
+			//albedo /= pow(dist, 1.6) * .2;
+			albedo /= dist * .2;
 			albedo *= costheta * costheta;
 			//albedo = .5 * n + .5;
 		}
