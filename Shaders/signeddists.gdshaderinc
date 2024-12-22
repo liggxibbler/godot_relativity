@@ -9,9 +9,25 @@ float sdBox(vec4 p , vec3 s)
 {
     float time=p.w;
     p.xyz=fract(p.xyz)-.5; //this creates the grid of reference cubes
-    p.yz *= Rotate(p.w*.5);
+    p.yz *= Rotate(time*.5);
     p.xyz = abs(p.xyz)-s;
     return length(max(p.xyz,0.))+ min(max(p.x,max(p.y,p.z)),0.);  
+}
+
+float sdSphere(vec4 p, vec4 center, float r)
+{
+	return length(p.xyz-center.xyz) - r;
+}
+
+float sdBoxFrame(vec4 p, vec4 b, float e )
+{
+	p.xyz=fract(p.xyz)-.5;
+	p = abs(p)-b;
+	vec4 q = abs(p+e)-e;
+	return min(min(
+	length(max(vec3(p.x,q.y,q.z),0.0))+min(max(p.x,max(q.y,q.z)),0.0),
+	length(max(vec3(q.x,p.y,q.z),0.0))+min(max(q.x,max(p.y,q.z)),0.0)),
+	length(max(vec3(q.x,q.y,p.z),0.0))+min(max(q.x,max(q.y,p.z)),0.0));
 }
 
 float sdCylinder( vec3 p, vec2 h )

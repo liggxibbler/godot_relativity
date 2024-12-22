@@ -5,7 +5,7 @@
 #define DEBUG true
 
 //comment this if you do not want the delayed view.
-#define RETARD 1.0
+//#define RETARD 0.0
 
 #define MAX_ITER 1500
 #define MAX_DIST 70.
@@ -27,15 +27,15 @@ uniform vec3 viewRight;
 
 uniform vec3 orientation;
 uniform vec3 iResolution;
-//uniform vec2 view2d;
+uniform vec4 enemyPosition;
 
 //#define LIGHT_DIR viewForward;//vec3(-3,2,1)
 
-const vec3 BOX_SIZE = vec3(.05); 
+const vec3 BOX_SIZE = vec3(.1);
 
 vec3 GetColor(float s)
 {
-	return vec3(1.,1.,1.) -
+	return vec3(1.0) -
 		vec3(1.,1.,0.) * smoothstep(0.,1., s) -
 		vec3(0.,.6,.6) * smoothstep(0.,1., -s);
 }
@@ -46,7 +46,7 @@ vec4 updatePos(vec2 m)
     if(m != vec2(0))
 	{
         cam.xy*=Rotate((m.y-.5)*PI);
-        cam.xz*=Rotate(-(m.x-.5)*2.*PI);    
+        cam.xz*=Rotate(-(m.x-.5)*2.*PI);
     }
     return uposition + transformMatrix*cam;
 }
@@ -61,41 +61,43 @@ struct SceneDistances
 #if DEBUG
 	int maxIteration;
 	vec3 reason;
-#endif	
+#endif
 };
 
 SceneDistances GetDistance(vec4 q)
 {
 	SceneDistances distances;
-	
-    float dist=sdBox(q, BOX_SIZE);
-    
-    
+
+    //float dist=sdBox(q, BOX_SIZE);
+	float dist=sdBoxFrame(q,vec4(0.5,0.5,0.5,0.0), 0.0005);
+
+	dist = min(dist, sdSphere(q, enemyPosition, 1.0f));
+
 	//the cylinders:
     float len= 3.;
     float d= 4.;
     float s=.5;
-    
+
 	q.x-=d;
     distances.cylinder1= sdCylinder(q.zxy, vec2(s,len*s));
     dist = min(dist,distances.cylinder1);
 	if (true)
-	{		
+	{
     q.x+=2.*d;
     distances.cylinder2= sdCylinder(q.zxy, vec2(s,len*s));
     dist = min(dist,distances.cylinder2);
-    
+
 	q.x-=d;
     q.z-=d;
     distances.cylinder3= sdCylinder(q.xzy, vec2(s,len*s));
     dist = min(dist,distances.cylinder3);
-    
+
 	q.z+=2.*d;
     distances.cylinder4= sdCylinder(q.xzy, vec2(s,len*s));
-    dist = min(dist,distances.cylinder4);    
+    dist = min(dist,distances.cylinder4);
     }
-	distances.marchDistance = dist;	
-	
+	distances.marchDistance = dist;
+
     return distances;
 }
 
@@ -111,42 +113,42 @@ SceneDistances RayMarch(vec4 ro, vec4 rd, float direction)
 {
 	float dO = 0.;
 	int i = 0;
-	
+
 	SceneDistances distances;
-	
+
 	bool isDone = false;
-	
+
 	while(true)
 	{
 		vec4 p = ro + dO * rd; //if rd.w =-c we look back in time as we march further away
-		
+
 		distances = GetDistance(p);
 #if DEBUG
 		distances.reason = vec3(0.0);
 #endif
-		
-		float dS = direction * distances.marchDistance; 
 
-		dO += dS;		
+		float dS = direction * distances.marchDistance;
+
+		dO += dS;
 		distances.marchDistance = dO;
-		
+
 		if (dS < SURF)
 		{
 #if DEBUG
 			distances.reason += COLOR_RED;
 #endif
 			isDone = true;
-		}		
+		}
 		if(dO > MAX_DIST)
 		{
 #if DEBUG
 			distances.reason += COLOR_GREEN;
-#endif			
+#endif
 			isDone = true;
 		}
-		
+
 		i++;
-		
+
 		if (i >= MAX_ITER)
 		{
 			isDone = true;
@@ -154,17 +156,17 @@ SceneDistances RayMarch(vec4 ro, vec4 rd, float direction)
 			distances.reason += COLOR_BLUE;
 #endif
 		}
-		
+
 		if (isDone)
 		{
-			break;			
+			break;
 		}
-	} 
+	}
 
 #if DEBUG
 	distances.maxIteration = i;
 #endif
-	
+
 	return distances;
 }
 
@@ -177,7 +179,7 @@ vec3 GetNormal(vec4 p)
 		GetDistance(p- e.yxyy).marchDistance,
 		GetDistance(p- e.yyxy).marchDistance
 	);
-   
+
    return normalize(n);
 }
 
@@ -188,20 +190,20 @@ struct MaterialQuery
 };
 
 MaterialQuery GetMaterial(vec4 p, SceneDistances distances)
-{	
+{
 	MaterialQuery result = MaterialQuery(false, vec3(0.0f));
-	
+
 	mat2 rotation = Rotate(p.w * .5);
 	vec4 yz_rotated = p, xy_rotated = p;
 	yz_rotated.yz *= rotation;
 	float twisty_along_x = sin(atan(yz_rotated.y,yz_rotated.z)*10.);
 	xy_rotated.xy *= rotation;
-	float twisty_along_z = sin(atan(xy_rotated.y,xy_rotated.x)*10.);        
+	float twisty_along_z = sin(atan(xy_rotated.y,xy_rotated.x)*10.);
 	result.hasData = true;
     if(distances.cylinder1 < 5. * SURF)
     {
 		p.yz *= rotation;
-        result.color = COLOR_RED * twisty_along_x * twisty_along_x;		
+        result.color = COLOR_RED * twisty_along_x * twisty_along_x;
     }
     else if(distances.cylinder2 < 5. * SURF)
     {
@@ -222,34 +224,34 @@ MaterialQuery GetMaterial(vec4 p, SceneDistances distances)
 	{
 		result.hasData = false;
 	}
-	
+
 	return result;
 }
 
 vec3 fragment2(vec2 texCoords)
 {
 	vec2 uv = texCoords;//(texCoords -.5*iResolution.xy)/iResolution.xy;
-	
+
 	vec3 albedo = vec3(texCoords, 0);
 	//return albedo;
-	
+
     vec4 position = uposition;//updatePos(vec2(0.0));
-    
+
     //ray's spacetime origin represented in "stationary coordinates":
     vec4 RO = position;
     float zoom = 1.;
-    
+
     //four-direction in our moving coords:
     //what we actually see as light reaches our eyes:
 
 
 
-//#ifdef RETARD 
+//#ifdef RETARD
 //	vec4 lookAt = vec4(c, 0, 0, -1.0);
-//#else //the "instantaneous geometry" of spacetime/coordinates: 
+//#else //the "instantaneous geometry" of spacetime/coordinates:
 //	vec4 lookAt = vec4(c, 0, 0, 0);
 //#endif
-//    
+//
 //    if(view2d != vec2(0))
 //	{
 //        lookAt.xy *= Rotate((view2d.y - .5) * PI);
@@ -258,19 +260,19 @@ vec3 fragment2(vec2 texCoords)
 
 
 
-      
+
     //ray in our moving coords:
     vec4 ray = GetRayDir(uv, zoom, -c);
-        
+
     //adding the rocket on top
     vec3 cam=vec3(-7,1.5,0);
-    
+
 	//if(view2d!=vec2(.5))
 	//{
 	//	cam.xy *= Rotate((view2d.y-.5) * PI);
 	//	cam.xz *= Rotate(-(view2d.x-.5) * 2. * PI);
-	//}           
-	
+	//}
+
 	//Fours fours = Fours(uposition, orientation, boost);
 
 	//RocketOutput rocketOut = rocket (cam, ray.xyz, fours, 0);
@@ -285,29 +287,32 @@ vec3 fragment2(vec2 texCoords)
     	//ray direction from moving coords to stationary coords:
     	vec4 rd = transformMatrix * ray;
     	//some rescaling for accuracy:
-    	
-#ifdef RETARD
-        rd.xyz=normalize(rd.xyz);
-        rd.w=-RETARD;
-#else
-		rd=normalize(rd); 
-#endif    
-		
-		//RAYMARCH IN SPACETIME calculated in stationary coordinates:
-		
+
+		if (iResolution.z > 0.0)
+		{
+			rd.xyz=normalize(rd.xyz);
+			rd.w=-iResolution.z;
+		}
+		else
+		{
+			rd = normalize(rd);
+		}
+
+			//RAYMARCH IN SPACETIME calculated in stationary coordinates:
+
 		SceneDistances distances = RayMarch(RO, rd, 1.);
-		
+
 		albedo = vec3(0., 0., 0.);;
-		
+
 		if(distances.marchDistance < MAX_DIST)
 		{ //if we hit an object:
-			vec4 p = RO + distances.marchDistance * rd;			
-			
+			vec4 p = RO + distances.marchDistance * rd;
+
 			albedo=GetColor(dot(normalize(rd.xyz), fourvel.xyz));
 			MaterialQuery query = GetMaterial(p, distances);
 			if (query.hasData)
-				albedo *= query.color;
-			
+				albedo += query.color;
+
 			vec3 n = GetNormal(p);
 
 			float costheta = dot(n, normalize(-viewForward)) * .5 + .5;

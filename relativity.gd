@@ -12,6 +12,8 @@ var viewForward = Vector3(1,0,0)
 var viewUp = Vector3(0,1,0)
 var viewRight = Vector3(0,0,1)
 
+var enemyPosition = Vector4(0,0,0,1)
+
 var maxBoostSize = 1.5
 
 var lookSpeed = 1.0
@@ -26,9 +28,11 @@ var shader_view2d
 var shader_viewForward
 var shader_viewUp
 var shader_viewRight
+var shader_enemyPosition
 
 var time_scale = 1.0
 var speedOfLight = 1.0
+var retardation = true
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -44,6 +48,7 @@ func _ready() -> void:
 	shader_viewForward = StringName("viewForward")
 	shader_viewUp = StringName("viewUp")
 	shader_viewRight = StringName("viewRight")
+	shader_enemyPosition = StringName("enemyPosition")
 	
 	update_resolution()
 	
@@ -71,6 +76,9 @@ func handle_physics(dt: float, input_boost : Vector4, c : float) -> void:
 		transform_matrix = transform_matrix * boost
 		fourvel = transform_matrix * Vector4(0,0,0,1)
 
+	enemyPosition.y = 5*cos(uposition.w)
+	enemyPosition.z = 5*sin(uposition.w)
+
 	uposition += fourvel * dt
 	
 func update_shader_values() -> void:
@@ -83,9 +91,13 @@ func update_shader_values() -> void:
 	surface_material.set_shader_parameter(shader_viewForward, viewForward)
 	surface_material.set_shader_parameter(shader_viewUp, viewUp)
 	surface_material.set_shader_parameter(shader_viewRight, viewRight)
+	surface_material.set_shader_parameter(shader_enemyPosition, enemyPosition)
 	
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
+	
+	if Input.is_action_just_pressed("ToggleRetardation"):
+		toggle_retardation()
 	
 	update_resolution()
 	
@@ -150,6 +162,9 @@ func speed_up(delta : float):
 	else:
 		time_scale = 1.0
 
+func toggle_retardation():
+	retardation = not retardation
+
 func Rotate2D(vec : Vector2, angle : float) -> Vector2:
 	var T = Transform2D(
 		Vector2(cos(angle),sin(angle)),
@@ -189,5 +204,5 @@ func instant_brake(delta_time : float):
 		fourvel = starting_fourvel.lerp(Vector4(0,0,0,1), alpha)
 	
 func update_resolution():
-	var resolution = Vector3(get_viewport().size.x, get_viewport().size.y, 1.0)
+	var resolution = Vector3(get_viewport().size.x, get_viewport().size.y, retardation)
 	surface_material.set_shader_parameter(shader_iResolution, resolution)
