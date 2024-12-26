@@ -19,15 +19,15 @@
 uniform mat4 transformMatrix;
 uniform vec4 fourvel;
 uniform vec4 uposition;
-uniform vec4 boost;
 
 uniform vec3 viewForward;
 uniform vec3 viewUp;
 uniform vec3 viewRight;
 
-uniform vec3 orientation;
 uniform vec3 iResolution;
 uniform vec4 enemyPosition;
+
+uniform float projectionDistance;
 
 //#define LIGHT_DIR viewForward;//vec3(-3,2,1)
 
@@ -38,17 +38,6 @@ vec3 GetColor(float s)
 	return vec3(1.0) -
 		vec3(1.,1.,0.) * smoothstep(0.,1., s) -
 		vec3(0.,.6,.6) * smoothstep(0.,1., -s);
-}
-
-vec4 updatePos(vec2 m)
-{
-    vec4 cam = vec4(-1,0,0,0);
-    if(m != vec2(0))
-	{
-        cam.xy*=Rotate((m.y-.5)*PI);
-        cam.xz*=Rotate(-(m.x-.5)*2.*PI);
-    }
-    return uposition + transformMatrix*cam;
 }
 
 struct SceneDistances
@@ -103,7 +92,7 @@ SceneDistances GetDistance(vec4 q)
 
 vec4 GetRayDir(vec2 uv, float zoom, float t)
 {
-    return vec4(normalize(
+	return vec4(normalize(
 		viewForward * zoom + uv.x * viewRight + uv.y * viewUp), t/c);
 
     //the w-component determines how we look into past/future/present.
@@ -191,7 +180,8 @@ struct MaterialQuery
 
 MaterialQuery GetMaterial(vec4 p, SceneDistances distances)
 {
-	MaterialQuery result = MaterialQuery(false, vec3(0.0f));
+	// Initialize hasData to true, and only set to false if there is no hit
+	MaterialQuery result = MaterialQuery(true, vec3(0.0f));
 
 	mat2 rotation = Rotate(p.w * .5);
 	vec4 yz_rotated = p, xy_rotated = p;
@@ -199,7 +189,6 @@ MaterialQuery GetMaterial(vec4 p, SceneDistances distances)
 	float twisty_along_x = sin(atan(yz_rotated.y,yz_rotated.z)*10.);
 	xy_rotated.xy *= rotation;
 	float twisty_along_z = sin(atan(xy_rotated.y,xy_rotated.x)*10.);
-	result.hasData = true;
     if(distances.cylinder1 < 5. * SURF)
     {
 		p.yz *= rotation;
@@ -235,94 +224,53 @@ vec3 fragment2(vec2 texCoords)
 	vec3 albedo = vec3(texCoords, 0);
 	//return albedo;
 
-    vec4 position = uposition;//updatePos(vec2(0.0));
-
     //ray's spacetime origin represented in "stationary coordinates":
-    vec4 RO = position;
-    float zoom = 1.;
-
-    //four-direction in our moving coords:
-    //what we actually see as light reaches our eyes:
-
-
-
-//#ifdef RETARD
-//	vec4 lookAt = vec4(c, 0, 0, -1.0);
-//#else //the "instantaneous geometry" of spacetime/coordinates:
-//	vec4 lookAt = vec4(c, 0, 0, 0);
-//#endif
-//
-//    if(view2d != vec2(0))
-//	{
-//        lookAt.xy *= Rotate((view2d.y - .5) * PI);
-//        lookAt.xz *= Rotate(-(view2d.x - .5) * 2. * PI);
-//    }
-
-
-
-
+    vec4 RO = uposition;
+    
     //ray in our moving coords:
-    vec4 ray = GetRayDir(uv, zoom, -c);
+    vec4 ray = GetRayDir(uv, projectionDistance, -c);
 
     //adding the rocket on top
     vec3 cam=vec3(-7,1.5,0);
 
-	//if(view2d!=vec2(.5))
-	//{
-	//	cam.xy *= Rotate((view2d.y-.5) * PI);
-	//	cam.xz *= Rotate(-(view2d.x-.5) * 2. * PI);
-	//}
+	float halo = 1.0f;
 
-	//Fours fours = Fours(uposition, orientation, boost);
+   	//ray direction from moving coords to stationary coords:
+   	vec4 rd = transformMatrix * ray;
+   	//some rescaling for accuracy:
 
-	//RocketOutput rocketOut = rocket (cam, ray.xyz, fours, 0);
-	float halo = 1.0f;//rocketOut.halo;
-
-    if (false)//length (rocketOut.color) > 0.0)
+	if (iResolution.z > 0.0)
 	{
-		//albedo.rgb = rocketOut.color;
-    }
+		rd.xyz=normalize(rd.xyz);
+		rd.w=-iResolution.z;
+	}
 	else
 	{
-    	//ray direction from moving coords to stationary coords:
-    	vec4 rd = transformMatrix * ray;
-    	//some rescaling for accuracy:
-
-		if (iResolution.z > 0.0)
-		{
-			rd.xyz=normalize(rd.xyz);
-			rd.w=-iResolution.z;
-		}
-		else
-		{
-			rd = normalize(rd);
-		}
-
-			//RAYMARCH IN SPACETIME calculated in stationary coordinates:
-
-		SceneDistances distances = RayMarch(RO, rd, 1.);
-
-		albedo = vec3(0., 0., 0.);;
-
-		if(distances.marchDistance < MAX_DIST)
-		{ //if we hit an object:
-			vec4 p = RO + distances.marchDistance * rd;
-
-			albedo=GetColor(dot(normalize(rd.xyz), fourvel.xyz));
-			MaterialQuery query = GetMaterial(p, distances);
-			if (query.hasData)
-				albedo += query.color;
-
-			vec3 n = GetNormal(p);
-
-			float costheta = dot(n, normalize(-viewForward)) * .5 + .5;
-			float dist = length(distances.marchDistance * rd);
-			//albedo /= pow(dist, 1.6) * .2;
-			albedo /= dist * .2;
-			albedo *= costheta * costheta;
-			//albedo = .5 * n + .5;
-		}
+		rd = normalize(rd);
 	}
 
-	return vec3(albedo);//+halo*halo*vec3(.4,.2,1);
+	//RAYMARCH IN SPACETIME calculated in stationary coordinates:
+
+	SceneDistances distances = RayMarch(RO, rd, 1.);
+
+	albedo = vec3(0., 0., 0.);
+
+	if(distances.marchDistance < MAX_DIST)
+	{ //if we hit an object:
+		vec4 p = RO + distances.marchDistance * rd;
+
+		albedo=GetColor(dot(normalize(rd.xyz), fourvel.xyz));
+		MaterialQuery query = GetMaterial(p, distances);
+		if (query.hasData)
+		{
+			albedo += query.color;
+			vec3 n = GetNormal(p);
+			float costheta = dot(n, normalize(-viewForward)) * .5 + .5;
+			albedo *= costheta * costheta;
+		}
+		float dist = length(distances.marchDistance * rd);
+		albedo /= dist * dist * .2;
+	}
+
+	return vec3(albedo);
 }

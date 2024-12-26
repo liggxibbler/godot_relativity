@@ -1,20 +1,20 @@
-[gd_scene load_steps=4 format=3 uid="uid://db6jn55m60rc0"]
+[gd_scene load_steps=5 format=3 uid="uid://db6jn55m60rc0"]
 
 [ext_resource type="Shader" path="res://Shaders/relativity.gdshader" id="1_dylw1"]
-[ext_resource type="Script" path="res://relativity.gd" id="2_su37p"]
+[ext_resource type="Script" path="res://shader_handler.gd" id="2_su37p"]
+[ext_resource type="Script" path="res://physics_handler.gd" id="3_38nkm"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_7y63f"]
 shader = ExtResource("1_dylw1")
 shader_parameter/transformMatrix = null
 shader_parameter/fourvel = null
 shader_parameter/uposition = null
-shader_parameter/boost = null
 shader_parameter/viewForward = null
 shader_parameter/viewUp = null
 shader_parameter/viewRight = null
-shader_parameter/orientation = null
 shader_parameter/iResolution = null
 shader_parameter/enemyPosition = null
+shader_parameter/projectionDistance = null
 
 [node name="Node3D" type="Node3D"]
 
@@ -30,3 +30,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="PhysicsHandler" type="Node" parent="."]
+script = ExtResource("3_38nkm")
