@@ -1,7 +1,7 @@
 extends Node
 
 class Sim:
-	var uposition : Vector4 = Vector4(0,0,0,0)
+	var uposition : Vector4 = Vector4(0.01,0.01,0,0)
 	var fourvel : Vector4 = Vector4(0,0,0,1)
 	var transform_matrix : Projection = Projection.IDENTITY
 
