@@ -9,7 +9,7 @@ var shader_position
 var shader_orientation
 var shader_fourvel
 var shader_boost
-var shader_iResolution
+var shader_resolution
 var shader_view2d
 var shader_viewForward
 var shader_viewUp
@@ -26,7 +26,7 @@ func _ready() -> void:
 	shader_position = StringName("uposition")
 	shader_boost = StringName("boost")
 	shader_orientation = StringName("orientation")
-	shader_iResolution = StringName("iResolution")
+	shader_resolution = StringName("resolution")
 	shader_view2d = StringName("view2d")
 	shader_viewForward = StringName("viewForward")
 	shader_viewUp = StringName("viewUp")
@@ -37,7 +37,7 @@ func _ready() -> void:
 	update_resolution(1.0)
 	
 func update_shader_values(sim : Global.Sim, view : Global.View, gameplay : Global.Gameplay) -> void:
-	surface_material.set_shader_parameter(shader_iResolution, resolution)
+	surface_material.set_shader_parameter(shader_resolution, resolution)
 	
 	surface_material.set_shader_parameter(shader_position, sim.uposition)
 	surface_material.set_shader_parameter(shader_fourvel, sim.fourvel)

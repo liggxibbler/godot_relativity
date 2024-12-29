@@ -12,7 +12,7 @@ shader_parameter/uposition = null
 shader_parameter/viewForward = null
 shader_parameter/viewUp = null
 shader_parameter/viewRight = null
-shader_parameter/iResolution = null
+shader_parameter/resolution = null
 shader_parameter/enemyPosition = null
 shader_parameter/projectionDistance = null
 

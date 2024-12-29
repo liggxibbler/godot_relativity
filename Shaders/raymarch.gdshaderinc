@@ -24,7 +24,7 @@ uniform vec3 viewForward;
 uniform vec3 viewUp;
 uniform vec3 viewRight;
 
-uniform vec3 iResolution;
+uniform vec3 resolution;
 uniform vec4 enemyPosition;
 
 uniform float projectionDistance;
@@ -92,10 +92,22 @@ SceneDistances GetDistance(vec4 q)
 
 vec4 GetRayDir(vec2 uv, float zoom, float t)
 {
-	return vec4(normalize(
+	vec4 ray = vec4(normalize(
 		viewForward * zoom + uv.x * viewRight + uv.y * viewUp), t/c);
 
-    //the w-component determines how we look into past/future/present.
+    vec4 rd = transformMatrix * ray;
+
+	if (false)//resolution.z > 0.0)
+	{
+		rd.xyz=normalize(rd.xyz);
+		rd.w=-resolution.z;
+	}
+	else
+	{
+		rd = normalize(rd);
+	}
+	
+	return rd;
 }
 
 SceneDistances RayMarch(vec4 ro, vec4 rd, float direction)
@@ -230,36 +242,16 @@ vec3 fragment2(vec2 texCoords)
     //ray in our moving coords:
     vec4 ray = GetRayDir(uv, projectionDistance, -c);
 
-    //adding the rocket on top
-    vec3 cam=vec3(-7,1.5,0);
-
-	float halo = 1.0f;
-
-   	//ray direction from moving coords to stationary coords:
-   	vec4 rd = transformMatrix * ray;
-   	//some rescaling for accuracy:
-
-	if (iResolution.z > 0.0)
-	{
-		rd.xyz=normalize(rd.xyz);
-		rd.w=-iResolution.z;
-	}
-	else
-	{
-		rd = normalize(rd);
-	}
-
-	//RAYMARCH IN SPACETIME calculated in stationary coordinates:
-
-	SceneDistances distances = RayMarch(RO, rd, 1.);
+    SceneDistances distances = RayMarch(RO, ray, 1.);
 
 	albedo = vec3(0., 0., 0.);
 
 	if(distances.marchDistance < MAX_DIST)
 	{ //if we hit an object:
-		vec4 p = RO + distances.marchDistance * rd;
+		vec4 p = RO + distances.marchDistance * ray;
 
-		albedo=GetColor(dot(normalize(rd.xyz), fourvel.xyz));
+		float shift = dot(normalize(ray.xyz), fourvel.xyz);
+		albedo=GetColor(shift);
 		MaterialQuery query = GetMaterial(p, distances);
 		if (query.hasData)
 		{
@@ -268,7 +260,7 @@ vec3 fragment2(vec2 texCoords)
 			float costheta = dot(n, normalize(-viewForward)) * .5 + .5;
 			albedo *= costheta * costheta;
 		}
-		float dist = length(distances.marchDistance * rd);
+		float dist = length(distances.marchDistance * ray);
 		albedo /= dist * dist * .2;
 	}
 
